@@ -2,8 +2,8 @@
 	import { onMount, tick } from 'svelte';
 	export let col;
 	export let row;
-	export let key;
 	export let on = true;
+	export let reactTo = undefined;
 
 	/** binding to html element */
 	let innerCell;
@@ -11,7 +11,6 @@
 	let slotIsEmpty = true;
 	/** needed for reactively checking if innerCell is empty */
 	let mounted = false;
-	export let reactTo = undefined;
 
 	const handleEmptyCell = () => {
 		tick().then(() => {
@@ -40,9 +39,15 @@
 				{:else if col?.value}
 					{col.value(row)}
 				{:else}
-					{row[key] || '-'}
+					{row[col.key] || '-'}
 				{/if}
 			{/key}
 		</div>
 	</td>
 {/if}
+
+<style>
+	.inner-cell {
+		width: 4rem;
+	}
+</style>

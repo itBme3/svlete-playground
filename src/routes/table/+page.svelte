@@ -1,6 +1,6 @@
 <script lang="ts">
+	import NestedRows from './../../lib/Table/NestedRows.svelte';
 	import Table from '$lib/Table/Table.svelte';
-	import Row from '$lib/Table/Row.svelte';
 	import Cell from '$lib/Table/Cell.svelte';
 	import Input from '$lib/Input/index.svelte';
 
@@ -14,28 +14,25 @@
 			prize: '🥇',
 			nested: [
 				{
-					id: '1.2',
+					id: '1.1',
 					name: 'Winner',
-					prize: '🦄'
-				},
-				{
-					id: '1.232323232323232323',
-					name: 'Something Else',
-					prize: '🦄'
+					prize: '🦄',
+					place: '--',
+					nested: [
+						{
+							id: '1.2',
+							name: 'Chicken Dinner',
+							place: '--',
+							prize: '🍗'
+						}
+					]
 				}
 			]
 		},
 		{
 			id: '2',
 			place: 'second',
-			prize: '🥈',
-			nested: [
-				{
-					id: '2.2',
-					name: 'So Close',
-					prize: '🙄'
-				}
-			]
+			prize: '🥈'
 		},
 		{
 			id: '3',
@@ -43,9 +40,16 @@
 			prize: '🥉',
 			nested: [
 				{
-					id: '3.2',
-					name: 'Wah Wah',
-					prize: '💩'
+					id: '3.1',
+					name: 'Wah',
+					prize: '💩',
+					nested: [
+						{
+							id: '3.2',
+							name: 'Wah',
+							prize: '🤬'
+						}
+					]
 				}
 			]
 		}
@@ -54,7 +58,7 @@
 	let columns = [
 		{
 			key: 'id',
-			title: 'ID'
+			title: '#'
 		},
 		{
 			key: 'place',
@@ -75,8 +79,8 @@
 	];
 
 	const nestedColumns = [
-		{ key: 'name', title: 'Name' },
-		{ key: 'prize', title: 'Prize' }
+		{ key: 'name', title: 'Some', width: '3rem' },
+		{ key: 'prize', title: 'Thing', width: '3rem' }
 	];
 
 	const handleRowClick = (id) => {
@@ -92,73 +96,129 @@
 <button on:click={() => (edit = !edit)}>
 	{edit ? 'read' : 'edit'}
 </button>
+
 <Table
 	{rows}
 	{columns}
-	nestedConfig={{
-		rows: (row) => row.nested,
-		show: (row) => toggleNested.has(row.id),
-		header: false
-	}}
-	on:rowClick={({ detail }) => handleRowClick(detail.id)}
+	on:toggleNested={({ detail: { id } }) => handleRowClick(id)}
+	showNested={(row) => toggleNested.has(row.id)}
 >
-	<Row slot="row" let:row let:id {id} {columns} {row} on:click={() => handleRowClick(id)}>
+	<svelte:fragment slot="cell" let:col let:row>
+		<Cell {row} {col} reactTo={edit}>
+			{#if edit && col.key !== 'place'}
+				<Input value={row[col.key]} />
+			{/if}
+		</Cell>
+	</svelte:fragment>
+
+	<svelte:fragment slot="nested" let:row>
+		{#if row?.nested?.length}
+			{#if row.id === '1'}
+				<NestedRows
+					rows={row.nested}
+					{columns}
+					showNested={(row) => toggleNested.has(row.id)}
+					on:toggleNested={({ detail: { id } }) => handleRowClick(id)}
+				>
+					<svelte:fragment slot="cell" let:col let:row>
+						<Cell {row} {col} reactTo={edit}>
+							{#if edit}
+								<Input value={row[col.key]} />
+							{/if}
+						</Cell>
+					</svelte:fragment>
+				</NestedRows>
+			{:else}
+				<NestedRows
+					inheritColumns={false}
+					showNested={(row) => toggleNested.has(row.id)}
+					on:toggleNested={({ detail: { id } }) => handleRowClick(id)}
+				>
+					<Table
+						rows={row.nested}
+						columns={nestedColumns}
+						showNested={(row) => toggleNested.has(row.id)}
+						on:toggleNested={({ detail: { id } }) => handleRowClick(id)}
+					>
+						<svelte:fragment slot="cell" let:col let:row>
+							<Cell {row} {col} reactTo={edit}>
+								{#if edit}
+									<Input value={row[col.key]} />
+								{/if}
+							</Cell>
+						</svelte:fragment>
+					</Table>
+				</NestedRows>
+			{/if}
+		{/if}
+	</svelte:fragment>
+</Table>
+
+<!-- <Table {rows} {columns}>
+	<Row
+		slot="row"
+		let:row
+		let:id
+		{id}
+		{columns}
+		{row}
+		showNested={toggleNested.has(id)}
+		on:toggleNested={({ detail: { id } }) => handleRowClick(id)}
+	>
 		<svelte:fragment slot="cell" let:col let:key>
-			{@const cellValues = { row, col, key }}
-
-			<Cell on={!['place', 'prize'].includes(key)} {...cellValues} />
-
-			<Cell on={key === 'prize'} reactTo={edit} {...cellValues}>
-				{#if edit}
+			<Cell {row} {col} {key} reactTo={edit}>
+				{#if edit && key !== 'place'}
 					<Input value={row[key]} />
 				{/if}
 			</Cell>
-
-			<Cell on={key === 'place'} reactTo={edit} {...cellValues} />
 		</svelte:fragment>
-	</Row>
 
-	<Row
-		slot="nested"
-		let:nestedRow
-		let:id
-		let:nestedId
-		let:nestedColumns
-		on={toggleNested.has(id)}
-		columns={nestedColumns}
-		id={nestedId}
-		row={nestedRow}
-	>
-		<svelte:fragment slot="cell" let:col let:key>
-			{@const nestedValues = { row: nestedRow, col, key }}
-
-			{#if key === 'name'}
-				<Cell {...nestedValues} />
-			{:else if key === 'prize'}
-				<Cell reactTo={edit} {...nestedValues}>
-					{#if edit}
-						<Input value={nestedRow[key]} />
-					{/if}
-				</Cell>
-			{:else}
-				<Cell {...nestedValues} />
+		<svelte:fragment slot="nested">
+			{#if row?.nested?.length}
+				<Table rows={row.nested} columns={nestedColumns} showHeader={true}>
+					<Row
+						slot="row"
+						let:row
+						let:id
+						{id}
+						columns={nestedColumns}
+						{row}
+						showNested={toggleNested.has(id)}
+						on:toggleNested={({ detail: { id } }) => handleRowClick(id)}
+					>
+						<svelte:fragment slot="cell" let:col let:key>
+							<Cell {row} {col} {key} reactTo={edit}>
+								{#if edit}
+									<Input value={row[key]} />
+								{/if}
+							</Cell>
+						</svelte:fragment>
+					</Row>
+				</Table>
 			{/if}
 		</svelte:fragment>
 	</Row>
-</Table>
-
-<style>
-	:global(body) {
+</Table> -->
+<style global>
+	body {
 		padding: 2rem;
 		font-family: sans-serif;
 	}
-	:global(table) {
+	table {
 		width: 100%;
+		border-spacing: 0;
 	}
-	:global(th) {
+	th {
 		font-weight: 900;
 	}
-	:global(td) {
+	td {
 		font-weight: 200;
+	}
+	.nested-row {
+		background-color: rgba(0, 0, 0, 0.05);
+		padding: 0.5rem;
+	}
+	.hidden {
+		display: none;
 	}
 </style>
