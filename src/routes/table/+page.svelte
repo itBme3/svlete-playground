@@ -118,7 +118,7 @@
 		</svelte:fragment>
 	</Row>
 
-	<!-- <Row
+	<Row
 		slot="nested"
 		let:nestedRow
 		let:id
@@ -144,7 +144,7 @@
 				<Cell {...nestedValues} />
 			{/if}
 		</svelte:fragment>
-	</Row> -->
+	</Row>
 </Table>
 
 <style>
