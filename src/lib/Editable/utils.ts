@@ -117,16 +117,19 @@ export function createChangeObserver<T>(
 export class ChangeProxy {
 	data: any;
 	changes: Record<string, any> = {};
+	originalData: any;
 
 	onChange: (id: string, path: string, value: any) => void;
 
 	constructor(data: any, onChange?: (id: string, path: string, value: any) => void) {
-		this.onChange = onChange.bind(this);
+		if (typeof onChange === 'function') {
+			this.onChange = onChange.bind(this);
+		}
+		this.originalData = data;
 		this.data = createChangeObserver(data, this._onChange.bind(this));
 	}
 
 	_onChange(id: string, path: string, value: any) {
-		console.log(id, path, value);
 		const change: { [key: string]: any } = this.changes?.[id] || {};
 		const val = objectLookup(this.data, path);
 		const unIndexedPath =
@@ -152,7 +155,6 @@ export class ChangeProxy {
 
 	reset() {
 		this.changes = {};
-		this.onChange(undefined, undefined, undefined);
 	}
 	get editedData() {
 		const dataArr = Array.isArray(this.data) ? this.data : [this.data];
@@ -173,5 +175,20 @@ export class ChangeProxy {
 			return itemWithChanges;
 		});
 		return Array.isArray(this.data) ? dataWithEdits : dataWithEdits[0];
+	}
+
+	get dataToSave() {
+		return (Array.isArray(this.data) ? [...this.data] : [{ ...this.data }]).reduce((acc, obj) => {
+			const itemChanges = this.changes[obj.id];
+			if (!itemChanges || Object.keys(itemChanges).length === 0) {
+				return acc;
+			}
+			for (const path in itemChanges) {
+				obj = setValueInObject(JSON.parse(JSON.stringify(obj)), path, itemChanges[path], 'force');
+			}
+
+			acc[obj.id] = obj;
+			return acc;
+		}, {});
 	}
 }
