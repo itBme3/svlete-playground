@@ -77,7 +77,7 @@ export const setValueInObject = (
 	}
 	let ref = obj;
 	const path = keyPath.split('.');
-	for (let i = 0; i <= path.length - 1; i++) {
+	for (let i = 0; i < path.length; i++) {
 		const key = path[i];
 		const nextKey = path[i + 1];
 		if (!ref?.[key]) {
@@ -86,7 +86,7 @@ export const setValueInObject = (
 			} else if (handleMissing === 'silent') {
 				return obj;
 			} else if (handleMissing === 'force') {
-				ref[key] = isNaN(parseInt(nextKey)) ? {} : Array(parseInt(nextKey) + 1).fill(undefined);
+				ref[key] = isNaN(parseInt(nextKey)) ? {} : [];
 			}
 		}
 

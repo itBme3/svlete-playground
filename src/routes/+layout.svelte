@@ -6,7 +6,7 @@
 	main {
 		padding: 1rem;
 		margin: auto;
-		max-width: 600px;
+		max-width: 1080px;
 		--jse-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu,
 			Cantarell, 'Helvetica Neue', sans-serif;
 		--jse-font-family-mono: consolas, menlo, monaco, 'Ubuntu Mono', 'source-code-pro', monospace;

@@ -25,56 +25,12 @@ export const isEditableProxy = (obj: any) => {
 
 export const hasKey = <T extends object>(obj: T, k: keyof any): k is keyof T => k in obj;
 
-export const createChangeProxy = <T>(
+export const createChangeObserver = <T>(
 	obj: T,
 	onChangeFunction: Function,
 	parentPath?: string,
 	parentId?: string
 ): any => {
-	if (Array.isArray(obj)) {
-		return obj.map((item, i) => createChangeProxy(item, onChangeFunction, `${i}`));
-	}
-	const handler = {
-		get: (target: any, prop: string, receiver: unknown) => {
-			const value = Reflect.get(target, prop, receiver);
-			const id = parentId || target.id;
-			const keyPath = parentPath && typeof prop === 'string' ? `${parentPath}.${prop}` : prop;
-			if (typeof value === 'object') {
-				if (Array.isArray(value)) {
-					if (typeof prop === 'string') {
-						return value.map((item, i) =>
-							createChangeProxy(item, onChangeFunction, `${keyPath}.${i}`, id)
-						);
-					}
-					return Reflect.get(target, prop, {
-						...target,
-						[prop]: value.map((item, i) =>
-							createChangeProxy(item, onChangeFunction, `${keyPath}.${i}`, id)
-						)
-					});
-				}
-				return createChangeProxy(value, onChangeFunction, keyPath, id);
-			}
-			return value;
-		},
-		set: (target: any, prop: any, value: any) => {
-			const id = parentId || target.id;
-			let path = parentPath || '';
-			if (typeof prop === 'string') {
-				path = `${path}.${prop}`;
-			}
-			onChangeFunction(id, path, value);
-			return Reflect.set(target, prop, value);
-		}
-	};
-	return new Proxy(obj, handler);
-};
-export function createChangeObserver<T>(
-	obj: T,
-	onChangeFunction: Function,
-	parentPath?: string,
-	parentId?: string
-): any {
 	if (Array.isArray(obj)) {
 		return obj.map((item, i) => createChangeObserver(item, onChangeFunction, `${i}`));
 	}
@@ -87,17 +43,20 @@ export function createChangeObserver<T>(
 				if (Array.isArray(value)) {
 					if (typeof prop === 'string') {
 						return value.map((item, i) =>
-							createChangeObserver(item, onChangeFunction, `${keyPath ? `${keyPath}.${i}` : i}`, id)
+							createChangeObserver(item, onChangeFunction, `${keyPath}.${i}`, id)
 						);
 					}
 					return Reflect.get(target, prop, {
 						...target,
 						[prop]: value.map((item, i) =>
-							createChangeObserver(item, onChangeFunction, `${keyPath ? `${keyPath}.${i}` : i}`, id)
+							createChangeObserver(item, onChangeFunction, `${keyPath}.${i}`, id)
 						)
 					});
 				}
-				return createChangeObserver(value, onChangeFunction, keyPath, id);
+				return Reflect.get(target, prop, {
+					...target,
+					[prop]: createChangeObserver(value, onChangeFunction, keyPath, id)
+				});
 			}
 			return value;
 		},
@@ -107,12 +66,12 @@ export function createChangeObserver<T>(
 			if (typeof prop === 'string') {
 				path = `${path ? `${path}.${prop}` : prop}`;
 			}
-			onChangeFunction(id, path, value, Reflect.get(target, prop));
+			onChangeFunction(id, path, value, Reflect.get(target, prop, target));
 			return true;
 		}
 	};
 	return new Proxy(obj, handler);
-}
+};
 
 export class ChangeProxy {
 	data: any;
@@ -123,7 +82,7 @@ export class ChangeProxy {
 
 	constructor(data: any, onChange?: (id: string, path: string, value: any) => void) {
 		if (typeof onChange === 'function') {
-			this.onChange = onChange.bind(this);
+			this.onChange = onChange;
 		}
 		this.originalData = data;
 		this.data = createChangeObserver(data, this._onChange.bind(this));
@@ -163,11 +122,11 @@ export class ChangeProxy {
 			if (!itemChanges) {
 				return item;
 			}
-			let itemWithChanges = { ...item };
+			let itemWithChanges = item;
 			const changePaths = Object.keys(itemChanges);
 			for (let i = 0; i < changePaths.length; i++) {
 				itemWithChanges = setValueInObject(
-					itemWithChanges,
+					JSON.parse(JSON.stringify(itemWithChanges)),
 					changePaths[i],
 					itemChanges[changePaths[i]]
 				);
@@ -177,7 +136,7 @@ export class ChangeProxy {
 		return Array.isArray(this.data) ? dataWithEdits : dataWithEdits[0];
 	}
 
-	get dataToSave() {
+	getDataToSave() {
 		return (Array.isArray(this.data) ? [...this.data] : [{ ...this.data }]).reduce((acc, obj) => {
 			const itemChanges = this.changes[obj.id];
 			if (!itemChanges || Object.keys(itemChanges).length === 0) {
@@ -192,3 +151,45 @@ export class ChangeProxy {
 		}, {});
 	}
 }
+
+export const removeIndexesFromKeypath = (keyPath: string) => {
+	const withoutIndexes = keyPath.replace(/ *(?<=\.|\d|^)(?<=^|\D)\d*(?=[\d\.]|$)(?!\d)/g, '');
+	// replaces leftover periods
+	return withoutIndexes.replace(/ *(?<=\.|^)\.*(?<=.|$)|\.*(?=$)/g, '');
+};
+
+export type EditableValidator = (
+	currentItem: any,
+	value: any,
+	previousValue: any
+) => string | undefined;
+
+export const getRelatedValidators = (
+	keyPath: string,
+	validators: Record<string, any>
+): {
+	method: EditableValidator;
+	key: string;
+}[] => {
+	const pathWithoutIndexes = removeIndexesFromKeypath(keyPath);
+	const pathParts = pathWithoutIndexes.split('.');
+	if (!isNaN(pathParts[0] as any)) {
+		pathParts.splice(0, 1);
+	}
+	let currentPath = '';
+	const relatedValidators: {
+		method: EditableValidator;
+		key: string;
+	}[] = [];
+	for (let i = 0; i < pathParts.length; i++) {
+		currentPath = `${currentPath}${i === 0 ? '' : '.'}${pathParts[i]}`;
+		console.log(currentPath);
+		const method: ((currentItem, value, previousValue) => string | undefined) | undefined =
+			validators?.[currentPath];
+		if (typeof method === 'function') {
+			relatedValidators.unshift({ method, key: currentPath });
+		}
+	}
+	console.log({ relatedValidators });
+	return relatedValidators;
+};

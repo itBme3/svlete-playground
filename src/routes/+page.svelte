@@ -1,69 +1,64 @@
 <script lang="ts">
 	import Editable from '$lib/Editable/index.svelte';
+	import { getPage } from '$lib/utils/data';
+	import { onMount } from 'svelte';
 
-	let data = [
-		{
-			id: '1',
-			x: 33,
-			y: 66,
-			alts: [{ x: 3, y: 6 }]
-		},
-		{
-			id: '2',
-			x: 22,
-			y: 77,
-			alts: [{ x: 2, y: 77 }]
-		}
-	];
+	let data: any;
 
 	const save = (saveRecord) => {
 		data = data.map((item) => (item.id in saveRecord ? saveRecord[item.id] : item));
 	};
+
+	onMount(() => {
+		getPage().then((res) => (data = res));
+	});
 </script>
 
-<Editable {data} let:changes let:proxyData on:save={({ detail }) => save(detail)}>
-	{#each proxyData as item, i (item.id)}
-		<div class="input-group">
-			<code>id: <strong>{proxyData[i].id}</strong></code>
-			{#each ['x', 'y'] as key}
-				<div class="input-field">
-					<label for={`input-${key}`}>{key}</label>
-					<input
-						type="number"
-						id={`input-${key}`}
-						value={proxyData[i][key]}
-						on:input={(e) => (proxyData[i][key] = e.target.value)}
-					/>
-				</div>
-			{/each}
-			{#if proxyData[i]?.alts?.length}
-				<div class="input-group">
-					<code>alternatives:</code>
-					{#each proxyData[i].alts as alt, altI}
-						{#each ['x', 'y'] as key}
-							<div class="input-field">
-								<label for={`input-alt-${key}`}>{key}</label>
-								<input
-									type="number"
-									id={`input-alt-${key}`}
-									value={proxyData[i].alts[altI][key]}
-									on:input={(e) => (proxyData[i].alts[altI][key] = e.target.value)}
-								/>
-							</div>
+{#if data}
+	<Editable {data} let:changes let:proxyData on:save={({ detail }) => save(detail)}>
+		{#each proxyData as item, i (item.id)}
+			<div class="input-group">
+				<code>id: <strong>{proxyData[i].id}</strong></code>
+				{#each ['x', 'y'] as key}
+					<div class="input-field">
+						<label for={`input-${key}`}>{key}</label>
+						<input
+							type="number"
+							id={`input-${key}`}
+							value={proxyData[i][key]}
+							on:input={(e) => (proxyData[i][key] = e.target.value)}
+						/>
+					</div>
+				{/each}
+				{#if proxyData[i]?.others?.length}
+					<div class="input-group">
+						<code>others:</code>
+						{#each proxyData[i].others as oter, oterI}
+							{#each ['x', 'y'] as key}
+								<div class="input-field">
+									<label for={`input-oter-${key}`}>{key}</label>
+									<input
+										type="number"
+										id={`input-oter-${key}`}
+										value={proxyData[i].others[oterI][key]}
+										on:input={(e) => (proxyData[i].others[oterI][key] = e.target.value)}
+									/>
+								</div>
+							{/each}
 						{/each}
-					{/each}
-				</div>
-			{/if}
-		</div>
-	{/each}
+					</div>
+				{/if}
+			</div>
+		{/each}
 
-	<h1>Changes:</h1>
+		<h1>Changes:</h1>
 
-	{JSON.stringify(changes)}
+		{JSON.stringify(changes)}
 
-	<h1>Data:</h1>
-	{JSON.stringify(data, null, 3)}
-</Editable>
+		<h1>Data:</h1>
+		{JSON.stringify(data, null, 3)}
+	</Editable>
+{/if}
 
 <style>
 	.input-group {

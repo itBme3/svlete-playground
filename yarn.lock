@@ -199,10 +199,10 @@
   dependencies:
     "@lezer/common" "^1.0.0"
 
-"@madhive/wingsuit@^3.2.16":
-  version "3.2.16"
-  resolved "https://npm.pkg.github.com/download/@MadHive/wingsuit/3.2.16/178a9af58112d17e57c6e86bdca56a36e635f5a9#178a9af58112d17e57c6e86bdca56a36e635f5a9"
-  integrity sha512-VajVwkgyPfZ3nbvuJK+TXBqvB49APXPWu1MVsdeyLUSwESr3J3Hwh4EVXfAHZGjphoVga4jAvrkEHmv8N0RUUA==
+"@madhive/wingsuit@^link:../../DEV/wingsuit/package":
+  version "3.4.0"
+  resolved "https://npm.pkg.github.com/download/@MadHive/wingsuit/3.4.0/381b29591d661c054eac0fd7aae5e71dfdbdeea7#381b29591d661c054eac0fd7aae5e71dfdbdeea7"
+  integrity sha512-EZyQeP4YOCeyKU3GlIluiKcbv1zt6h+kkWSrKH5a5ydGadGtWrImnxcWFjfb2JwAQU8SdyTyUTVFupBj8EKEeQ==
   dependencies:
     "@sveltejs/adapter-node" "1.0.0-next.87"
     fuse.js "6.6.2"
@@ -502,6 +502,11 @@ chalk@^4.0.0:
   dependencies:
     ansi-styles "^4.1.0"
     supports-color "^7.1.0"
+
+chance@^1.1.9:
+  version "1.1.9"
+  resolved "https://registry.yarnpkg.com/chance/-/chance-1.1.9.tgz#fbf409726a956415b4bde0e8db010f60b60fc01b"
+  integrity sha512-TfxnA/DcZXRTA4OekA2zL9GH8qscbbl6X0ZqU4tXhGveVY/mXWvEQLt5GwZcYXTEyEFflVtj+pG8nc8EwSm1RQ==
 
 "chokidar@>=3.0.0 <4.0.0", chokidar@^3.4.1:
   version "3.5.3"
@@ -1656,6 +1661,11 @@ svelte-hmr@^0.15.1:
   version "0.15.1"
   resolved "https://registry.yarnpkg.com/svelte-hmr/-/svelte-hmr-0.15.1.tgz#d11d878a0bbb12ec1cba030f580cd2049f4ec86b"
   integrity sha512-BiKB4RZ8YSwRKCNVdNxK/GfY+r4Kjgp9jCLEy0DuqAKfmQtpL38cQK3afdpjw4sqSs4PLi3jIPJIFp259NkZtA==
+
+svelte-json-tree@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/svelte-json-tree/-/svelte-json-tree-1.0.0.tgz#843f3fa8fa590cbc580674a1827de876b5328ebd"
+  integrity sha512-scs1OdkC8uFpTN4MX0yKkOzZ1/EG3eP1ARC+xcFthXp2IfcwBaXgab0FqA4Am0vQwffNNB+1Gd1LFkJBlynWTA==
 
 svelte-jsoneditor@^0.11.8:
   version "0.11.8"
